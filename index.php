@@ -1,25 +1,41 @@
-<?php 
+<?php
+// Show PHP errors (helps us debug)
+error_reporting(E_ALL);
+ini_set("display_errors", 1);
+
 include("db.php");
 
-// Handle form submission
 $message = "";
 
+// Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $title = trim($_POST["title"]);
 
-    if (!empty($title)) {
-        $stmt = $conn->prepare("INSERT INTO anime (title) VALUES (?)");
-        $stmt->bind_param("s", $title);
-
-        if ($stmt->execute()) {
-            $message = "Anime added successfully!";
-        } else {
-            $message = "Error adding anime.";
-        }
-
-        $stmt->close();
+    // Check if empty
+    if ($title === "") {
+        $message = "Please enter an anime title.";
     } else {
-        $message = "Please enter an anime name.";
+        // Check for duplicates
+        $check = $conn->prepare("SELECT id FROM anime WHERE title = ?");
+        $check->bind_param("s", $title);
+        $check->execute();
+        $result = $check->get_result();
+
+        if ($result->num_rows > 0) {
+            $message = "This anime already exists in your list.";
+        } else {
+            // Insert into database
+            $stmt = $conn->prepare("INSERT INTO anime (title) VALUES (?)");
+            $stmt->bind_param("s", $title);
+
+            if ($stmt->execute()) {
+                $message = "Anime added successfully!";
+            } else {
+                $message = "Error adding anime.";
+            }
+
+            $stmt->close();
+        }
     }
 }
 ?>
@@ -34,11 +50,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     <form method="POST">
         <label>Anime Title:</label>
-        <input type="text" name="title" required>
+        <input type="text" name="title">
         <button type="submit">Add</button>
     </form>
 
-    <p><?php echo $message; ?></p>
+    <!-- Show messages here -->
+    <p style="color:red; font-weight:bold;">
+        <?php echo $message; ?>
+    </p>
 
     <h2>Current Watchlist</h2>
 
@@ -49,13 +68,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </tr>
 
         <?php
+        // Display all anime from DB
         $result = $conn->query("SELECT * FROM anime ORDER BY id DESC");
 
         if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 echo "<tr>
-                    <td>{$row['id']}</td>
-                    <td>{$row['title']}</td>
+                    <td>" . $row['id'] . "</td>
+                    <td>" . $row['title'] . "</td>
                 </tr>";
             }
         } else {
