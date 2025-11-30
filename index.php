@@ -1,5 +1,4 @@
-<?php
-// Show PHP errors (helps us debug)
+<<?php
 error_reporting(E_ALL);
 ini_set("display_errors", 1);
 
@@ -11,11 +10,10 @@ $message = "";
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $title = trim($_POST["title"]);
 
-    // Check if empty
     if ($title === "") {
         $message = "Please enter an anime title.";
     } else {
-        // Check for duplicates
+        // Check if anime already exists
         $check = $conn->prepare("SELECT id FROM anime WHERE title = ?");
         $check->bind_param("s", $title);
         $check->execute();
@@ -24,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($result->num_rows > 0) {
             $message = "This anime already exists in your list.";
         } else {
-            // Insert into database
+            // Insert new anime
             $stmt = $conn->prepare("INSERT INTO anime (title) VALUES (?)");
             $stmt->bind_param("s", $title);
 
@@ -46,6 +44,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <title>Anime Watchlist</title>
 </head>
 <body>
+
     <h1>My Anime Watchlist</h1>
 
     <form method="POST">
@@ -54,32 +53,39 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <button type="submit">Add</button>
     </form>
 
-    <!-- Show messages here -->
-    <p style="color:red; font-weight:bold;">
-        <?php echo $message; ?>
-    </p>
+    <p style="color:red; font-weight:bold;"><?php echo $message; ?></p>
 
     <h2>Current Watchlist</h2>
 
     <table border="1" cellpadding="10">
         <tr>
-            <th>ID</th>
+            <th>#</th>
             <th>Anime Title</th>
+            <th>Actions</th>
         </tr>
 
         <?php
-        // Display all anime from DB
-        $result = $conn->query("SELECT * FROM anime ORDER BY id DESC");
+        $result = $conn->query("SELECT * FROM anime ORDER BY id ASC");
+
+        $counter = 1; // Row numbering starts at 1
 
         if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
                 echo "<tr>
-                    <td>" . $row['id'] . "</td>
+                    <td>" . $counter . "</td>
                     <td>" . $row['title'] . "</td>
+                    <td>
+                        <a href='delete.php?id=" . $row['id'] . "' 
+                           onclick='return confirm(\"Are you sure you want to delete this anime?\");'>
+                           Delete
+                        </a>
+                    </td>
                 </tr>";
+
+                $counter++; // Increase row number
             }
         } else {
-            echo "<tr><td colspan='2'>No anime added yet.</td></tr>";
+            echo "<tr><td colspan='3'>No anime added yet.</td></tr>";
         }
         ?>
     </table>
