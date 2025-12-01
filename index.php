@@ -1,4 +1,4 @@
-<<?php
+<?php
 error_reporting(E_ALL);
 ini_set("display_errors", 1);
 
@@ -6,14 +6,14 @@ include("db.php");
 
 $message = "";
 
-// Handle form submission
+// Handle form submission (Add Anime)
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $title = trim($_POST["title"]);
 
     if ($title === "") {
         $message = "Please enter an anime title.";
     } else {
-        // Check if anime already exists
+        // Check for duplicates
         $check = $conn->prepare("SELECT id FROM anime WHERE title = ?");
         $check->bind_param("s", $title);
         $check->execute();
@@ -22,7 +22,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($result->num_rows > 0) {
             $message = "This anime already exists in your list.";
         } else {
-            // Insert new anime
+            // Insert into DB
             $stmt = $conn->prepare("INSERT INTO anime (title) VALUES (?)");
             $stmt->bind_param("s", $title);
 
@@ -66,15 +66,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         <?php
         $result = $conn->query("SELECT * FROM anime ORDER BY id ASC");
-
-        $counter = 1; // Row numbering starts at 1
+        $counter = 1; // row numbering
 
         if ($result->num_rows > 0) {
             while ($row = $result->fetch_assoc()) {
+
                 echo "<tr>
                     <td>" . $counter . "</td>
                     <td>" . $row['title'] . "</td>
                     <td>
+                        <a href='edit.php?id=" . $row['id'] . "'>Edit</a>
+                        |
                         <a href='delete.php?id=" . $row['id'] . "' 
                            onclick='return confirm(\"Are you sure you want to delete this anime?\");'>
                            Delete
@@ -82,7 +84,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     </td>
                 </tr>";
 
-                $counter++; // Increase row number
+                $counter++;
             }
         } else {
             echo "<tr><td colspan='3'>No anime added yet.</td></tr>";
