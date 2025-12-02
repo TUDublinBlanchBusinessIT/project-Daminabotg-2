@@ -7,33 +7,46 @@ if (isset($_POST['saveButton'])) {
     $episodesWatched = $_POST['episodes_watched'];
     $totalEpisodes = $_POST['total_episodes'];
     $status = $_POST['status'];
+    $dubbed = $_POST['dubbed'];
     $startDate = $_POST['start_date'];
 
-    $insertSql = "INSERT INTO anime (title, episodes_watched, total_episodes, status, start_date)
-                  VALUES ('$title', $episodesWatched, $totalEpisodes, '$status', '$startDate')";
+    // Version 2.2: Duplicate check
+    $checkSql = "SELECT * FROM anime WHERE title = '$title'";
+    $checkResult = $conn->query($checkSql);
+
+    if ($checkResult->num_rows > 0) {
+        header("Location: index.php?message=Anime+already+exists!");
+        exit();
+    }
+
+    $insertSql = "INSERT INTO anime (title, episodes_watched, total_episodes, status, start_date, dubbed)
+                  VALUES ('$title', $episodesWatched, $totalEpisodes, '$status', '$startDate', '$dubbed')";
 
     if ($conn->query($insertSql) === TRUE) {
-        $message = "Anime saved!";
+        header("Location: index.php?message=Anime+saved!");
+        exit();
     } else {
-        $message = "Error: " . $conn->error;
+        header("Location: index.php?message=Error");
+        exit();
     }
 }
 
-$listSql = "SELECT * FROM anime ORDER BY id DESC";
+// Version 2.2: Order by first → last
+$listSql = "SELECT * FROM anime ORDER BY id ASC";
 $result = $conn->query($listSql);
 ?>
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Anime Watchlist - Version 1</title>
+    <title>Anime Watchlist</title>
 </head>
 <body>
 
-<h1>Anime Watchlist (Version 1)</h1>
+<h1>Anime Watchlist</h1>
 
 <?php
-if (isset($message)) {
-    echo "<p><strong>" . $message . "</strong></p>";
+if (isset($_GET['message'])) {
+    echo "<p><strong>" . $_GET['message'] . "</strong></p>";
 }
 ?>
 
@@ -57,7 +70,19 @@ if (isset($message)) {
 
     <p>
         <label>Status:</label><br>
-        <input type="text" name="status" />
+        <select name="status">
+            <option value="Watching">Watching</option>
+            <option value="Completed">Completed</option>
+            <option value="On Hold">On Hold</option>
+            <option value="Dropped">Dropped</option>
+            <option value="Plan to Watch">Plan to Watch</option>
+        </select>
+    </p>
+
+    <p>
+        <label>Dubbed or Subbed:</label><br>
+        <input type="radio" name="dubbed" value="Dubbed"> Dubbed
+        <input type="radio" name="dubbed" value="Subbed"> Subbed
     </p>
 
     <p>
@@ -79,6 +104,7 @@ if (isset($message)) {
         <th>Episodes Watched</th>
         <th>Total Episodes</th>
         <th>Status</th>
+        <th>Dubbed?</th>
         <th>Start Date</th>
     </tr>
 
@@ -93,11 +119,12 @@ if ($result && $result->num_rows > 0) {
         echo "<td>" . $row['episodes_watched'] . "</td>";
         echo "<td>" . $row['total_episodes'] . "</td>";
         echo "<td>" . $row['status'] . "</td>";
+        echo "<td>" . $row['dubbed'] . "</td>";
         echo "<td>" . $row['start_date'] . "</td>";
         echo "</tr>";
     }
 } else {
-    echo "<tr><td colspan='6'>No anime added yet</td></tr>";
+    echo "<tr><td colspan='7'>No anime added yet</td></tr>";
 }
 
 if ($result) {
