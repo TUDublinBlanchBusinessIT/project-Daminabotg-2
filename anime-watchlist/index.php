@@ -8,9 +8,10 @@ if (isset($_POST['saveButton'])) {
     $totalEpisodes = $_POST['total_episodes'];
     $status = $_POST['status'];
     $dubbed = $_POST['dubbed'];
+    $genre = $_POST['genre_id'];
     $startDate = $_POST['start_date'];
 
-    // Version 2.2: Duplicate check
+    
     $checkSql = "SELECT * FROM anime WHERE title = '$title'";
     $checkResult = $conn->query($checkSql);
 
@@ -19,8 +20,9 @@ if (isset($_POST['saveButton'])) {
         exit();
     }
 
-    $insertSql = "INSERT INTO anime (title, episodes_watched, total_episodes, status, start_date, dubbed)
-                  VALUES ('$title', $episodesWatched, $totalEpisodes, '$status', '$startDate', '$dubbed')";
+    
+    $insertSql = "INSERT INTO anime (title, episodes_watched, total_episodes, status, start_date, dubbed, genre_id)
+                  VALUES ('$title', $episodesWatched, $totalEpisodes, '$status', '$startDate', '$dubbed', $genre)";
 
     if ($conn->query($insertSql) === TRUE) {
         header("Location: index.php?message=Anime+saved!");
@@ -31,9 +33,16 @@ if (isset($_POST['saveButton'])) {
     }
 }
 
-// Version 2.2: Order by first → last
-$listSql = "SELECT * FROM anime ORDER BY id ASC";
+
+$listSql = "SELECT anime.*, genres.genre_name 
+            FROM anime
+            LEFT JOIN genres ON anime.genre_id = genres.id
+            ORDER BY anime.id ASC";
 $result = $conn->query($listSql);
+
+
+$genreSql = "SELECT * FROM genres ORDER BY genre_name ASC";
+$genreResult = $conn->query($genreSql);
 ?>
 <!DOCTYPE html>
 <html>
@@ -86,6 +95,19 @@ if (isset($_GET['message'])) {
     </p>
 
     <p>
+        <label>Genre:</label><br>
+        <select name="genre_id">
+            <?php
+            if ($genreResult && $genreResult->num_rows > 0) {
+                while ($g = $genreResult->fetch_assoc()) {
+                    echo "<option value='" . $g['id'] . "'>" . $g['genre_name'] . "</option>";
+                }
+            }
+            ?>
+        </select>
+    </p>
+
+    <p>
         <label>Start Date:</label><br>
         <input type="date" name="start_date" />
     </p>
@@ -105,6 +127,7 @@ if (isset($_GET['message'])) {
         <th>Total Episodes</th>
         <th>Status</th>
         <th>Dubbed?</th>
+        <th>Genre</th>
         <th>Start Date</th>
     </tr>
 
@@ -120,11 +143,12 @@ if ($result && $result->num_rows > 0) {
         echo "<td>" . $row['total_episodes'] . "</td>";
         echo "<td>" . $row['status'] . "</td>";
         echo "<td>" . $row['dubbed'] . "</td>";
+        echo "<td>" . $row['genre_name'] . "</td>";
         echo "<td>" . $row['start_date'] . "</td>";
         echo "</tr>";
     }
 } else {
-    echo "<tr><td colspan='7'>No anime added yet</td></tr>";
+    echo "<tr><td colspan='8'>No anime added yet</td></tr>";
 }
 
 if ($result) {
