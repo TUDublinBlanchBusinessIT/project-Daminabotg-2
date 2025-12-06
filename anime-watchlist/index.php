@@ -19,22 +19,29 @@ if (isset($_GET['edit'])) {
 }
 
 if (isset($_POST['updateButton'])) {
-    $id = $_POST['id'];
-    $title = $_POST['title'];
-    $episodesWatched = $_POST['episodes_watched'];
-    $totalEpisodes = $_POST['total_episodes'];
-    $status = $_POST['status'];
-    $dubbed = $_POST['dubbed'];
-    $genre = $_POST['genre_id'];
-    $startDate = $_POST['start_date'];
 
-    $conn->query("UPDATE anime SET 
+    $id = $_POST['id'];
+
+    $title = isset($_POST['title']) ? $_POST['title'] : "";
+    $episodesWatched = isset($_POST['episodes_watched']) ? $_POST['episodes_watched'] : "";
+    $totalEpisodes = isset($_POST['total_episodes']) ? $_POST['total_episodes'] : "";
+    $status = isset($_POST['status']) ? $_POST['status'] : "";
+    $dubbed = isset($_POST['dubbed']) ? $_POST['dubbed'] : "";
+    $genre = isset($_POST['genre_id']) ? $_POST['genre_id'] : "";
+    $startDate = isset($_POST['start_date']) ? $_POST['start_date'] : "";
+
+    if ($title == "") {
+        header("Location: index.php?message=Please+insert+anime!");
+        exit();
+    }
+
+    $conn->query("UPDATE anime SET
                   title='$title',
-                  episodes_watched=$episodesWatched,
-                  total_episodes=$totalEpisodes,
+                  episodes_watched='$episodesWatched',
+                  total_episodes='$totalEpisodes',
                   status='$status',
                   dubbed='$dubbed',
-                  genre_id=$genre,
+                  genre_id='$genre',
                   start_date='$startDate'
                   WHERE id=$id");
 
@@ -43,25 +50,30 @@ if (isset($_POST['updateButton'])) {
 }
 
 if (isset($_POST['saveButton'])) {
-    $title = $_POST['title'];
-    $episodesWatched = $_POST['episodes_watched'];
-    $totalEpisodes = $_POST['total_episodes'];
-    $status = $_POST['status'];
-    $dubbed = $_POST['dubbed'];
-    $genre = $_POST['genre_id'];
-    $startDate = $_POST['start_date'];
+
+    $title = isset($_POST['title']) ? $_POST['title'] : "";
+    $episodesWatched = isset($_POST['episodes_watched']) ? $_POST['episodes_watched'] : "";
+    $totalEpisodes = isset($_POST['total_episodes']) ? $_POST['total_episodes'] : "";
+    $status = isset($_POST['status']) ? $_POST['status'] : "";
+    $dubbed = isset($_POST['dubbed']) ? $_POST['dubbed'] : "";
+    $genre = isset($_POST['genre_id']) ? $_POST['genre_id'] : "";
+    $startDate = isset($_POST['start_date']) ? $_POST['start_date'] : "";
+
+    if ($title == "") {
+        header("Location: index.php?message=Please+insert+anime!");
+        exit();
+    }
 
     $checkResult = $conn->query("SELECT * FROM anime WHERE title = '$title'");
-
     if ($checkResult->num_rows > 0) {
         header("Location: index.php?message=Anime+already+exists!");
         exit();
     }
 
-    $conn->query("INSERT INTO anime 
+    $conn->query("INSERT INTO anime
                   (title, episodes_watched, total_episodes, status, start_date, dubbed, genre_id)
-                  VALUES 
-                  ('$title', $episodesWatched, $totalEpisodes, '$status', '$startDate', '$dubbed', $genre)");
+                  VALUES
+                  ('$title', '$episodesWatched', '$totalEpisodes', '$status', '$startDate', '$dubbed', '$genre')");
 
     header("Location: index.php?message=Anime+saved!");
     exit();
